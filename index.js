@@ -18,6 +18,9 @@ app.get('/', function (req, res) {
   res.send('Hello World!');
 });
 
+app.listen(3000, function () {
+    console.log('Example app listening on port 3000!');
+  });
 
 // SCIM endpoint for deleting a user by ID
 app.delete('/scim/v2/Users/:id', (req, res) => {
