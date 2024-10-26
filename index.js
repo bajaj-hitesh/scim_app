@@ -22,7 +22,7 @@ app.post('/scim/v2/users', (req, res) => {
     const id = uuid.v4();
     user.id = id;
 
-    console.log(`User Object being saved: ${user}`)
+    console.log(`User Object being saved: ${JSON.stringify(user)}`)
     const profileStr = JSON.stringify(user);
 
     db.run(`INSERT INTO users (id, userName, json_body) VALUES (?, ?, ?)`,
