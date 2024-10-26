@@ -40,9 +40,13 @@ function auth(req, res, next) {
     const user = basicAuth(req);
     const username = process.env.username || 'admin'; // Replace with your username
     const password = process.env.password || 'Passw0rd'; // Replace with your password
+    let headers = req.headers;
+    const bearerToken = process.env.bearerToken || "abc";
 
     if (user && user.name === username && user.pass === password) {
         return next(); // Authorized
+    } else if(headers && headers.authorization && headers.authorization === `Bearer ${bearerToken}`){      
+      return next();
     } else {
         res.set('WWW-Authenticate', 'Basic realm="example"');
         
