@@ -6,7 +6,9 @@ var db = require('./db');
 var app = express();
 app.use('/', auth);
 
-app.use(express.json());
+app.use(express.json({
+    type: ['application/json', 'application/scim+json']
+}));
 
 
 
