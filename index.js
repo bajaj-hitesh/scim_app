@@ -3,6 +3,26 @@ var uuid = require('uuid')
 const applicationRouter = require('./routes');
 const { auth } = require('./utils');
 var db = require('./db');
+var group = require('./group')
+
+const groupNames = [
+    "Developer",
+    "Product Manager",
+    "HR",
+    "Sales",
+    "Marketing",
+    "Project Manager",
+    "Release Manager",
+    "Compliance Officer",
+    "SRE Admin",
+    "SRE Manager"
+  ];
+
+  
+ groupNames.forEach(element => {
+    group.create(element);
+ }); 
+
 
 var app = express();
 app.use('/', auth);
