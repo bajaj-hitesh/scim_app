@@ -19,9 +19,9 @@ const groupNames = [
   ];
 
   
- groupNames.forEach(element => {
-    group.create(element);
- }); 
+ // groupNames.forEach(element => {
+ //    group.create(element);
+ // }); 
 
 
 var app = express();
