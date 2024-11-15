@@ -14,6 +14,8 @@ router.route('/services/scim/v2/Users')
 
 router.route('/services/scim/v2/Groups/:id')
 .get(groups.getPaginatedGroups)
+
+router.route('/services/scim/v2/Groups/:id')
 .patch(groups.patchGroupMembership)
 
 
