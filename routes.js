@@ -12,7 +12,7 @@ router.route('/services/scim/v2/Users')
 .post(users.create)
 .get(users.getPaginatedUsers)
 
-router.route('/services/scim/v2/Groups/:id')
+router.route('/services/scim/v2/Groups')
 .get(groups.getPaginatedGroups)
 
 router.route('/services/scim/v2/Groups/:id')
