@@ -12,6 +12,11 @@ router.route('/services/scim/v2/Users')
 .post(users.create)
 .get(users.getPaginatedUsers)
 
+router.route('/services/scim/v2/Groups/:id')
+.get(groups.getPaginatedGroups)
+.patch(groups.patchGroupMembership)
+
+
 // router.route('/services/scim/v2/Users/:id')
 // .get(users.getOne)
 // .patch(users.update)
