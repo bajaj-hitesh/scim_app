@@ -5,6 +5,7 @@ const { auth } = require('./utils');
 
 let users = require('./user')
 let groups = require('./group')
+let misc = require('./misc')
 
 router.use('/services/scim/v2', auth);
 
@@ -15,8 +16,14 @@ router.route('/services/scim/v2/Users')
 router.route('/services/scim/v2/Groups')
 .get(groups.getPaginatedGroups)
 
+router.route('/download')
+.get(misc.download)
+
+
 router.route('/services/scim/v2/Groups/:id')
 .patch(groups.patchGroupMembership)
+
+
 
 
 // router.route('/services/scim/v2/Users/:id')
