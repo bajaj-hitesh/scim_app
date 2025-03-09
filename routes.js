@@ -8,13 +8,21 @@ let groups = require('./group')
 let misc = require('./misc')
 
 router.use('/services/scim/v2', auth);
+router.use('/services/:customdb/scim/v2', auth);
 
 router.route('/services/scim/v2/Users')
 .post(users.create)
 .get(users.getPaginatedUsers)
 
+router.route('/services/:customdb/scim/v2/Users')
+.get(users.getPaginatedUsers)
+
 router.route('/services/scim/v2/Groups')
 .get(groups.getPaginatedGroups)
+
+router.route('/services/:customdb/scim/v2/Groups')
+.get(users.getPaginatedGroups)
+
 
 router.route('/download')
 .get(misc.download)
