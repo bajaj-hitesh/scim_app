@@ -1,5 +1,5 @@
 
-var db = require('./db');
+var { db, databases} = require('./db');
 var uuid = require('uuid')
 
 
@@ -33,24 +33,42 @@ exports.getPaginatedUsers = async(req, res, next) => {
      // Parse pagination parameters with defaults for SCIM compliance
      const startIndex = parseInt(req.query.startIndex) || 1; // SCIM 1-based index
      const count = parseInt(req.query.count) || 100;          // Default to 10 users per page
+
+     let totalResults = 0
  
      // Calculate the offset for SQL (SQLite uses 0-based index)
      const offset = startIndex - 1;
  
-     db.all(`SELECT * FROM users LIMIT ? OFFSET ?`, [count, offset], (err, rows) => {
+     database = db
+     if(req.params.customdb){
+        databaseName = req.params.customdb
+        database = databases[databaseName]
+     }
+        
+
+     database.all(`SELECT users.*, COALESCE(STRING_AGG(members.groupId, ','), '') AS groups  FROM users  LEFT JOIN group_memberships members ON users.id = members.userId WHERE users.id IN (SELECT id FROM users ORDER BY id LIMIT ? OFFSET ?) GROUP BY users.id, users.userName ORDER BY users.id; `, [count, offset], (err, rows) => {
          if (err) {
              return res.status(500).json({ detail: "Error retrieving users", status: 500 });
          }
- 
+
+        
          // Format the response in SCIM v2.0 pagination structure
-         const resources = rows.map(user => (JSON.parse(user.json_body)));
+         const resources = rows.map(user => {
+            let userBody = JSON.parse(user.json_body)
+            const groupsArray = user.groups.split(',').map(id => ({ value: id }));
+
+            userBody.groups = groupsArray
+            return userBody
+         });
+
  
          // Query the total number of users to include in response
-         db.get(`SELECT COUNT(*) AS totalResults FROM users`, (err, countResult) => {
+         database.get(`SELECT COUNT(*) AS totalResults FROM users`, (err, countResult) => {
              if (err) {
                  return res.status(500).json({ detail: "Error counting users", status: 500 });
              }
  
+             totalResults = countResult.totalResults;
              const scimResponse = {
                  schemas: ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
                  totalResults: countResult.totalResults,
