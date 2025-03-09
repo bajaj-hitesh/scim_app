@@ -1,6 +1,6 @@
 
 
-var db = require('./db');
+var {db} = require('./db');
 var uuid = require('uuid')
 
 exports.create = async (groupName) => {
@@ -102,4 +102,5 @@ exports.patchGroupMembership = async (req, res, next) => {
     });
 
 }
+
 
