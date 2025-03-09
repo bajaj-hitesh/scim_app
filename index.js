@@ -2,7 +2,7 @@ var express = require('express');
 var uuid = require('uuid')
 const applicationRouter = require('./routes');
 const { auth } = require('./utils');
-var db = require('./db');
+var {db} = require('./db');
 var group = require('./group')
 
 const groupNames = [
@@ -19,9 +19,9 @@ const groupNames = [
   ];
 
   
- // groupNames.forEach(element => {
- //    group.create(element);
- // }); 
+//  groupNames.forEach(element => {
+//     group.create(element);
+//  }); 
 
 
 var app = express();
