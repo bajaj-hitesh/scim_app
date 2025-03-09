@@ -34,4 +34,11 @@ db.serialize(() => {
     `);
 });
 
-module.exports = db;
+const dbPath20k5 = path.join(__dirname, 'scim20k5.db');
+const db20k5 = new sqlite3.Database(dbPath20k5);
+
+const databases = {
+    'scim20k5': db20k5
+}
+
+module.exports = { db, databases };
