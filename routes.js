@@ -21,7 +21,7 @@ router.route('/services/scim/v2/Groups')
 .get(groups.getPaginatedGroups)
 
 router.route('/services/:customdb/scim/v2/Groups')
-.get(users.getPaginatedGroups)
+.get(groups.getPaginatedUsers)
 
 
 router.route('/download')
