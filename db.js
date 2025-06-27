@@ -5,6 +5,10 @@ const path = require('path');
 const dbDir = __dirname; // or specify a subdirectory
 const files = fs.readdirSync(dbDir);
 
+const dbPath = path.join(__dirname, 'scim.db');
+const db = new sqlite3.Database(dbPath);
+const databases = {};
+
 // Initialize tables for users, groups, and group memberships
 db.serialize(() => {
     db.run(`
@@ -37,6 +41,7 @@ db.serialize(() => {
 
 
 files.forEach(file => {
+    console.log(`filename: ${file}`);
     if (file.endsWith('.db')) {
         const dbName = path.basename(file, '.db');
         const dbPath = path.join(dbDir, file);
