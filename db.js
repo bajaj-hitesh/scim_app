@@ -1,8 +1,9 @@
 const sqlite3 = require('sqlite3').verbose();
+const fs = require('fs');
 const path = require('path');
 
-const dbPath = path.join(__dirname, 'scim.db');
-const db = new sqlite3.Database(dbPath);
+const dbDir = __dirname; // or specify a subdirectory
+const files = fs.readdirSync(dbDir);
 
 // Initialize tables for users, groups, and group memberships
 db.serialize(() => {
@@ -34,11 +35,13 @@ db.serialize(() => {
     `);
 });
 
-const dbPath20k5 = path.join(__dirname, 'scim20k5.db');
-const db20k5 = new sqlite3.Database(dbPath20k5);
 
-const databases = {
-    'scim20k5': db20k5
-}
+files.forEach(file => {
+    if (file.endsWith('.db')) {
+        const dbName = path.basename(file, '.db');
+        const dbPath = path.join(dbDir, file);
+        databases[dbName] = new sqlite3.Database(dbPath);
+    }
+});
 
 module.exports = { db, databases };
