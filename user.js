@@ -56,7 +56,7 @@ exports.getPaginatedUsers = async(req, res, next) => {
          const resources = rows.map(user => {
             let userBody = JSON.parse(user.json_body)
             const groupsArray = user.groups.split(',').map(id => ({ value: id }));
-
+            console.log(groupsArray);
             userBody.groups = groupsArray
             return userBody
          });
