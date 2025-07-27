@@ -28,6 +28,67 @@ exports.create = async(req, res, next) => {
     console.log(`time taken for create user: ${end - start} ms`);
 }
 
+exports.delete = async (req, res, next) => {
+    const start = Date.now();
+    const userId = req.params.id;
+
+    console.log(`Delete user: ${userId}`);
+
+    db.get(`SELECT id FROM users WHERE id = ?`, [userId], (err, row) => {
+        if (err) {
+            console.error('Error fetching user:', err.message);
+            return res.status(500).json({ detail: "Error checking user", status: 500 });
+        }
+
+        if (!row) {
+            console.log(`User not found with ID: ${userId}`);
+            return res.status(404).json({ detail: "User not found", status: 404 });
+        }
+
+        db.run(`DELETE FROM users WHERE id = ?`, [userId], function (err) {
+            if (err) {
+                console.error('Error deleting user:', err.message);
+                return res.status(500).json({ detail: "Error deleting user", status: 500 });
+            }
+
+            const end = Date.now();
+            console.log(`User deleted successfully. Time taken: ${end - start} ms`);
+            return res.status(204).send(); // No Content
+        });
+    });
+}
+
+exports.modify = async (req, res, next) => {
+    const start = Date.now();
+    const userId = req.params.id;
+
+    console.log(`Modify user: ${userId}`);
+
+    db.get(`SELECT id FROM users WHERE id = ?`, [userId], (err, row) => {
+        if (err) {
+            console.error('Error fetching user:', err.message);
+            return res.status(500).json({ detail: "Error checking user", status: 500 });
+        }
+
+        if (!row) {
+            console.log(`User not found with ID: ${userId}`);
+            return res.status(404).json({ detail: "User not found", status: 404 });
+        }
+
+    
+       // Simulate a delay between 50ms and 300ms
+        const delay = Math.floor(Math.random() * 251);
+
+            setTimeout(() => {
+                const end = Date.now();
+                console.log(`User modified successfully. Time taken: ${end - start} ms (delay: ${delay} ms)`);
+                res.status(204).send(); // Response is sent after the delay
+            }, delay);
+    
+    });
+}
+
+
 exports.getPaginatedUsers = async(req, res, next) => {
 
      // Parse pagination parameters with defaults for SCIM compliance
