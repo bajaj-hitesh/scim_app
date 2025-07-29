@@ -20,6 +20,7 @@ router.route('/services/scim/v2/Users/:id')
 
 router.route('/services/:customdb/scim/v2/Users/:id')
 .delete(users.delete)
+.put(users.modify)
 .patch(users.modify)
 
 router.route('/services/:customdb/scim/v2/Users')
