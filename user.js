@@ -29,12 +29,20 @@ exports.create = async(req, res, next) => {
 }
 
 exports.delete = async (req, res, next) => {
+
+    database = db
+     if(req.params.customdb){
+        databaseName = req.params.customdb
+        database = databases[databaseName]
+     }
+
+
     const start = Date.now();
     const userId = req.params.id;
 
     console.log(`Delete user: ${userId}`);
 
-    db.get(`SELECT id FROM users WHERE id = ?`, [userId], (err, row) => {
+    database.get(`SELECT id FROM users WHERE id = ?`, [userId], (err, row) => {
         if (err) {
             console.error('Error fetching user:', err.message);
             return res.status(500).json({ detail: "Error checking user", status: 500 });
@@ -45,7 +53,7 @@ exports.delete = async (req, res, next) => {
             return res.status(404).json({ detail: "User not found", status: 404 });
         }
 
-        db.run(`DELETE FROM users WHERE id = ?`, [userId], function (err) {
+        database.run(`DELETE FROM users WHERE id = ?`, [userId], function (err) {
             if (err) {
                 console.error('Error deleting user:', err.message);
                 return res.status(500).json({ detail: "Error deleting user", status: 500 });
@@ -59,12 +67,20 @@ exports.delete = async (req, res, next) => {
 }
 
 exports.modify = async (req, res, next) => {
+
+    database = db
+     if(req.params.customdb){
+        databaseName = req.params.customdb
+        database = databases[databaseName]
+     }
+
+
     const start = Date.now();
     const userId = req.params.id;
 
     console.log(`Modify user: ${userId}`);
 
-    db.get(`SELECT id FROM users WHERE id = ?`, [userId], (err, row) => {
+    database.get(`SELECT id FROM users WHERE id = ?`, [userId], (err, row) => {
         if (err) {
             console.error('Error fetching user:', err.message);
             return res.status(500).json({ detail: "Error checking user", status: 500 });
