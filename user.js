@@ -28,7 +28,7 @@ exports.create = async(req, res, next) => {
     console.log(`time taken for create user: ${end - start} ms`);
 }
 
-exports.lookupUser = aysync(req, res, next) => {
+exports.lookupUser = async(req, res, next) => {
 
      database = db
      if(req.params.customdb){
