@@ -42,7 +42,7 @@ exports.lookupUser = async(req, res, next) => {
 
     console.log(`lookup user: ${userId}`);
 
-    database.get(`SELECT id FROM users WHERE id = ?`, [userId], (err, row) => {
+    database.get(`SELECT id, json_body FROM users WHERE id = ?`, [userId], (err, row) => {
         if (err) {
             console.error('Error fetching user:', err.message);
             return res.status(500).json({ detail: "Error checking user", status: 500 });
@@ -56,7 +56,7 @@ exports.lookupUser = async(req, res, next) => {
 
         const end = Date.now();
         console.log(`User lookup successfully. Time taken: ${end - start} ms`);
-        return res.status(200).json(json_body); 
+        return res.status(200).json(JSON.parse(row.json_body)); 
         
     });
 
