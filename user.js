@@ -28,6 +28,40 @@ exports.create = async(req, res, next) => {
     console.log(`time taken for create user: ${end - start} ms`);
 }
 
+exports.lookupUser = aysync(req, res, next) => {
+
+     database = db
+     if(req.params.customdb){
+        databaseName = req.params.customdb
+        database = databases[databaseName]
+     }
+
+
+    const start = Date.now();
+    const userId = req.params.id;
+
+    console.log(`lookup user: ${userId}`);
+
+    database.get(`SELECT id FROM users WHERE id = ?`, [userId], (err, row) => {
+        if (err) {
+            console.error('Error fetching user:', err.message);
+            return res.status(500).json({ detail: "Error checking user", status: 500 });
+        }
+
+        if (!row) {
+            console.log(`User not found with ID: ${userId}`);
+            return res.status(404).json({ detail: "User not found", status: 404 });
+        }
+
+
+        const end = Date.now();
+        console.log(`User lookup successfully. Time taken: ${end - start} ms`);
+        return res.status(200).json(json_body); 
+        
+    });
+
+}
+
 exports.delete = async (req, res, next) => {
 
     database = db
