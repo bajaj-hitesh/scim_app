@@ -45,7 +45,7 @@ function auth(req, res, next) {
     const username = process.env.username || 'admin'; // Replace with your username
     const password = process.env.password || 'Passw0rd'; // Replace with your password
     
-    const bearerToken = process.env.bearerToken || "abc";
+    const bearerToken = process.env.bearerToken || "hEh2i9ELe8jv4VhD2adzBqXl1cAuPhkYB7tWzl1HR9meOJGeYBbFtusfG5odXZKL";
 
     if (user && user.name === username && user.pass === password) {
         return next(); // Authorized
