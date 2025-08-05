@@ -37,12 +37,14 @@ function deleteUser(id) {
 }
 
 function auth(req, res, next) {
-    console.log(`Authorization: ${headers.authorization}`);
+   let headers = req.headers;
+   
+   console.log(`Authorization: ${headers.authorization}`);
    
     const user = basicAuth(req);
     const username = process.env.username || 'admin'; // Replace with your username
     const password = process.env.password || 'Passw0rd'; // Replace with your password
-    let headers = req.headers;
+    
     const bearerToken = process.env.bearerToken || "abc";
 
     if (user && user.name === username && user.pass === password) {
