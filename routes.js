@@ -17,6 +17,7 @@ router.route('/services/scim/v2/Users')
 router.route('/services/scim/v2/Users/:id')
 .delete(users.delete)
 .patch(users.modify)
+.get(users.lookupUser)
 
 router.route('/services/:customdb/scim/v2/Users/:id')
 .delete(users.delete)
