@@ -4,19 +4,29 @@ var {db} = require('./db');
 var uuid = require('uuid')
 
 exports.create = async (groupName) => {
-
-    const id = uuid.v4();
-
-    console.log(`Group Object being saved: ${groupName}`)
-
-    db.run(`INSERT INTO groups (id, displayName) VALUES (?, ?)`,
-        [id, groupName],
-        function (err) {
-            if (err) {
-                console.log(`Group creation failed: ${groupName}`)
-            }
+ 
+    db.all(`SELECT * FROM groups where displayName = '${groupName}'`, (err, rows) => {
+        
+        if(rows.length != 0){
+            console.log(`Group already exists: ${groupName}`)
+            return
         }
-    );
+
+        const id = uuid.v4();
+
+        console.log(`Group Object being saved: ${groupName}`)
+
+        db.run(`INSERT INTO groups (id, displayName) VALUES (?, ?)`,
+            [id, groupName],
+            function (err) {
+                if (err) {
+                    console.log(`Group creation failed: ${groupName}`)
+                }
+            }
+        );
+    });
+
+    
 }
 
 exports.getPaginatedGroups = async (req, res, next) => {
