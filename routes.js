@@ -23,6 +23,8 @@ router.route('/services/:customdb/scim/v2/Users/:id')
 .delete(users.delete)
 .put(users.modify)
 .patch(users.modify)
+.get(users.lookupUser)
+
 
 router.route('/services/:customdb/scim/v2/Users')
 .get(users.getPaginatedUsers)
