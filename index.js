@@ -4,25 +4,79 @@ const applicationRouter = require('./routes');
 const { auth } = require('./utils');
 var {db} = require('./db');
 var group = require('./group')
+const fs = require('fs');
+const path = require('path');
+const unzipper = require('unzipper');
 
-const groupNames = [
-    "Developer",
-    "Product Manager",
-    "HR",
-    "Sales",
-    "Marketing",
-    "Project Manager",
-    "Release Manager",
-    "Compliance Officer",
-    "SRE Admin",
-    "SRE Manager"
-  ];
+const baseFolder = './';        // folder containing your zip files
+const outputBase = './';    // where to extract contents
+
+// Ensure output folder exists
+if (!fs.existsSync(outputBase)) {
+  fs.mkdirSync(outputBase, { recursive: true });
+}
+
+fs.readdir(baseFolder, (err, files) => {
+  if (err) {
+    console.error('Error reading folder:', err);
+    return;
+  }
+
+  // Filter only .zip files
+  const zipFiles = files.filter(file => file.endsWith('.zip'));
+
+  zipFiles.forEach(file => {
+    const filePath = path.join(baseFolder, file);
+    const outputFolder = outputBase
+
+    // Ensure output folder exists for this zip
+    if (!fs.existsSync(outputFolder)) {
+      fs.mkdirSync(outputFolder, { recursive: true });
+    }
+
+    console.log(`Extracting ${file} → ${outputFolder}`);
+
+    fs.createReadStream(filePath)
+      .pipe(unzipper.Extract({ path: outputFolder }))
+      .on('close', () => {
+        console.log(`✅ Finished extracting ${file}`);
+
+        // Delete the zip file after successful extraction
+        fs.unlink(filePath, (err) => {
+          if (err) {
+            console.error(`❌ Error deleting ${file}:`, err);
+          } else {
+            console.log(`🗑️ Deleted ${file}`);
+          }
+        });
+      });
+  });
+});
+
+// const groupNames = [
+//     "Developer",
+//     "Product Manager",
+//     "HR",
+//     "Sales",
+//     "Marketing",
+//     "Project Manager",
+//     "Release Manager",
+//     "Compliance Officer",
+//     "SRE Admin",
+//     "SRE Manager"
+//   ];
 
   
- groupNames.forEach(element => {
-    group.create(element);
- }); 
+//  groupNames.forEach(element => {
+//     group.create(element);
+//  }); 
 
+//  for (let i = 1; i <= 500; i++) {
+//   // padStart makes numbers like 1 → 001, 2 → 002
+//   const groupName = `Grp${i.toString().padStart(3, '0')}`;
+//   console.log(groupName);
+//   group.create(groupName);
+// }
 
 var app = express();
 app.use('/', auth);
