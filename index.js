@@ -2,7 +2,6 @@ var express = require('express');
 var uuid = require('uuid')
 const applicationRouter = require('./routes');
 const { auth } = require('./utils');
-var {db} = require('./db');
 var group = require('./group')
 const fs = require('fs');
 const path = require('path');
@@ -52,6 +51,8 @@ fs.readdir(baseFolder, (err, files) => {
       });
   });
 });
+
+var {db} = require('./db');
 
 // const groupNames = [
 //     "Developer",
