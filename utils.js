@@ -43,7 +43,7 @@ function auth(req, res, next) {
    
     const user = basicAuth(req);
     const username = process.env.username || 'admin'; // Replace with your username
-    const password = process.env.password || 'Security@1BM'; // Replace with your password
+    const password = process.env.password || 'Passw0rd'; // Replace with your password
     
     const bearerToken = process.env.bearerToken || "hEh2i9ELe8jv4VhD2adzBqXl1cAuPhkYB7tWzl1HR9meOJGeYBbFtusfG5odXZKL";
 
