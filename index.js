@@ -52,7 +52,13 @@ fs.readdir(baseFolder, (err, files) => {
   });
 });
 
-var {db} = require('./db');
+// Add a sleep of 10 seconds to make sure the files are unzipped completely
+console.log('Waiting 10 seconds to ensure all files are properly unzipped...');
+setTimeout(() => {
+  console.log('Continuing with application startup after waiting');
+  
+  var {db} = require('./db');
+}, 10000); // 10000 milliseconds = 10 seconds
 
 // const groupNames = [
 //     "Developer",
