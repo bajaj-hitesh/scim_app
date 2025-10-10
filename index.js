@@ -5,60 +5,8 @@ const { auth } = require('./utils');
 var group = require('./group')
 const fs = require('fs');
 const path = require('path');
-const unzipper = require('unzipper');
 
-const baseFolder = './';        // folder containing your zip files
-const outputBase = './';    // where to extract contents
-
-// Ensure output folder exists
-if (!fs.existsSync(outputBase)) {
-  fs.mkdirSync(outputBase, { recursive: true });
-}
-
-fs.readdir(baseFolder, (err, files) => {
-  if (err) {
-    console.error('Error reading folder:', err);
-    return;
-  }
-
-  // Filter only .zip files
-  const zipFiles = files.filter(file => file.endsWith('.zip'));
-
-  zipFiles.forEach(file => {
-    const filePath = path.join(baseFolder, file);
-    const outputFolder = outputBase
-
-    // Ensure output folder exists for this zip
-    if (!fs.existsSync(outputFolder)) {
-      fs.mkdirSync(outputFolder, { recursive: true });
-    }
-
-    console.log(`Extracting ${file} → ${outputFolder}`);
-
-    fs.createReadStream(filePath)
-      .pipe(unzipper.Extract({ path: outputFolder }))
-      .on('close', () => {
-        console.log(`✅ Finished extracting ${file}`);
-
-        // Delete the zip file after successful extraction
-        fs.unlink(filePath, (err) => {
-          if (err) {
-            console.error(`❌ Error deleting ${file}:`, err);
-          } else {
-            console.log(`🗑️ Deleted ${file}`);
-          }
-        });
-      });
-  });
-});
-
-// Add a sleep of 10 seconds to make sure the files are unzipped completely
-console.log('Waiting 10 seconds to ensure all files are properly unzipped...');
-setTimeout(() => {
-  console.log('Continuing with application startup after waiting');
-  
-  var {db} = require('./db');
-}, 30000); // 30 seconds
+var {db} = require('./db');
 
 // const groupNames = [
 //     "Developer",
