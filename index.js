@@ -58,7 +58,7 @@ setTimeout(() => {
   console.log('Continuing with application startup after waiting');
   
   var {db} = require('./db');
-}, 10000); // 10000 milliseconds = 10 seconds
+}, 30000); // 30 seconds
 
 // const groupNames = [
 //     "Developer",
