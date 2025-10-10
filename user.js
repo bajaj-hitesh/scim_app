@@ -150,11 +150,13 @@ exports.getPaginatedUsers = async(req, res, next) => {
      // Calculate the offset for SQL (SQLite uses 0-based index)
      const offset = startIndex - 1;
  
+     
      database = db
      if(req.params.customdb){
         databaseName = req.params.customdb
         database = databases[databaseName]
      }
+     console.log(`will be using: ${database}`)
         
 
      database.all(`SELECT users.*, COALESCE(STRING_AGG(members.groupId, ','), '') AS groups  FROM users  LEFT JOIN group_memberships members ON users.id = members.userId WHERE users.id IN (SELECT id FROM users ORDER BY id LIMIT ? OFFSET ?) GROUP BY users.id, users.userName ORDER BY users.id; `, [count, offset], (err, rows) => {
