@@ -41,7 +41,7 @@ db.serialize(() => {
 
 
 files.forEach(file => {
-    console.log(`filename: ${file}`);
+    //console.log(`filename: ${file}`);
     if (file.endsWith('.db')) {
         const dbName = path.basename(file, '.db');
         const dbPath = path.join(dbDir, file);
