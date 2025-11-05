@@ -1,6 +1,6 @@
 
 
-var {db} = require('./db');
+const { db, databases } = require('./db');
 var uuid = require('uuid')
 
 exports.create = async (groupName) => {
