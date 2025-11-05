@@ -30,7 +30,13 @@ exports.create = async (groupName) => {
 }
 
 exports.getPaginatedGroups = async (req, res, next) => {
-
+ 
+    database = db
+     if(req.params.customdb){
+        databaseName = req.params.customdb
+        database = databases[databaseName]
+     }
+    
     // Parse pagination parameters with defaults for SCIM compliance
     const startIndex = parseInt(req.query.startIndex) || 1; // SCIM 1-based index
     const count = parseInt(req.query.count) || 100;          // Default to 10 users per page
@@ -38,7 +44,7 @@ exports.getPaginatedGroups = async (req, res, next) => {
     // Calculate the offset for SQL (SQLite uses 0-based index)
     const offset = startIndex - 1;
 
-    db.all(`SELECT * FROM groups LIMIT ? OFFSET ?`, [count, offset], (err, rows) => {
+    database.all(`SELECT * FROM groups LIMIT ? OFFSET ?`, [count, offset], (err, rows) => {
         if (err) {
             return res.status(500).json({ detail: "Error retrieving groups", status: 500 });
         }
@@ -51,7 +57,7 @@ exports.getPaginatedGroups = async (req, res, next) => {
             }));
 
         // Query the total number of users to include in response
-        db.get(`SELECT COUNT(*) AS totalResults FROM groups`, (err, countResult) => {
+        database.get(`SELECT COUNT(*) AS totalResults FROM groups`, (err, countResult) => {
             if (err) {
                 return res.status(500).json({ detail: "Error counting groups", status: 500 });
             }
