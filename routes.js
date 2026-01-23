@@ -14,6 +14,12 @@ router.route('/services/scim/v2/Users')
 .post(users.create)
 .get(users.getPaginatedUsers)
 
+router.route('/services/scim/v2/Users/bulk')
+.patch(users.bulkUpdateAttribute)
+
+router.route('/services/:customdb/scim/v2/Users/bulk')
+.patch(users.bulkUpdateAttribute)
+
 router.route('/services/scim/v2/Users/:id')
 .delete(users.delete)
 .patch(users.modify)
