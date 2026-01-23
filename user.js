@@ -150,13 +150,11 @@ exports.getPaginatedUsers = async(req, res, next) => {
      // Calculate the offset for SQL (SQLite uses 0-based index)
      const offset = startIndex - 1;
  
-     
      database = db
      if(req.params.customdb){
         databaseName = req.params.customdb
         database = databases[databaseName]
      }
-     console.log(`will be using: ${database}`)
         
 
      database.all(`SELECT users.*, COALESCE(STRING_AGG(members.groupId, ','), '') AS groups  FROM users  LEFT JOIN group_memberships members ON users.id = members.userId WHERE users.id IN (SELECT id FROM users ORDER BY id LIMIT ? OFFSET ?) GROUP BY users.id, users.userName ORDER BY users.id; `, [count, offset], (err, rows) => {
@@ -198,4 +196,163 @@ exports.getPaginatedUsers = async(req, res, next) => {
 
 
 }
+
+// Helper function to set nested property using dot notation or direct path
+// Handles SCIM schema URNs specially (e.g., "urn:...:2.0:User.costCenter")
+function setNestedProperty(obj, path, value) {
+    // Check if this is a SCIM schema URN path
+    // Pattern: urn:...:X.Y:Something.nestedProperty
+    const scimSchemaMatch = path.match(/^(urn:[^.]+\.\d+:[^.]+)\.(.+)$/);
     
+    if (scimSchemaMatch) {
+        // Split into schema key and nested property
+        const schemaKey = scimSchemaMatch[1]; // e.g., "urn:example:params:scim:schemas:extension:custom:2.0:User"
+        const nestedPath = scimSchemaMatch[2]; // e.g., "costCenter" or "nested.property"
+        
+        // Ensure the schema object exists
+        if (!obj[schemaKey] || typeof obj[schemaKey] !== 'object') {
+            obj[schemaKey] = {};
+        }
+        
+        // If there's further nesting in the property path
+        if (nestedPath.includes('.')) {
+            const nestedKeys = nestedPath.split('.');
+            let current = obj[schemaKey];
+            
+            for (let i = 0; i < nestedKeys.length - 1; i++) {
+                const key = nestedKeys[i];
+                if (!current[key] || typeof current[key] !== 'object') {
+                    current[key] = {};
+                }
+                current = current[key];
+            }
+            current[nestedKeys[nestedKeys.length - 1]] = value;
+        } else {
+            // Direct property under schema
+            obj[schemaKey][nestedPath] = value;
+        }
+        return;
+    }
+    
+    // Handle direct property (no dots)
+    if (!path.includes('.')) {
+        obj[path] = value;
+        return;
+    }
+
+    // Handle regular nested property with dot notation
+    const keys = path.split('.');
+    let current = obj;
+
+    for (let i = 0; i < keys.length - 1; i++) {
+        const key = keys[i];
+        // Create nested object if it doesn't exist
+        if (!current[key] || typeof current[key] !== 'object') {
+            current[key] = {};
+        }
+        current = current[key];
+    }
+
+    // Set the final value
+    current[keys[keys.length - 1]] = value;
+}
+
+exports.bulkUpdateAttribute = async (req, res, next) => {
+    const start = Date.now();
+    const { attributePath, attributeValue } = req.body;
+
+    let database = db
+     if(req.params.customdb){
+        databaseName = req.params.customdb
+        database = databases[databaseName]
+     }
+
+    if (!attributePath) {
+        return res.status(400).json({
+            detail: "attributePath is required",
+            status: 400
+        });
+    }
+
+    console.log(`Bulk update: Setting ${attributePath} = ${JSON.stringify(attributeValue)} for all users`);
+
+    // Fetch all users
+    database.all(`SELECT id, json_body FROM users`, [], (err, rows) => {
+        if (err) {
+            console.error('Error fetching users:', err.message);
+            return res.status(500).json({
+                detail: "Error fetching users",
+                status: 500
+            });
+        }
+
+        if (rows.length === 0) {
+            return res.status(200).json({
+                message: "No users found to update",
+                updatedCount: 0
+            });
+        }
+
+        let updatedCount = 0;
+        let errorCount = 0;
+        const totalUsers = rows.length;
+
+        // Process each user
+        rows.forEach((row, index) => {
+            try {
+                // Parse the json_body
+                const userObj = JSON.parse(row.json_body);
+                
+                // Update the attribute using the helper function
+                setNestedProperty(userObj, attributePath, attributeValue);
+                
+                // Stringify back
+                const updatedJsonBody = JSON.stringify(userObj);
+
+                // Update in database
+                database.run(
+                    `UPDATE users SET json_body = ? WHERE id = ?`,
+                    [updatedJsonBody, row.id],
+                    function (updateErr) {
+                        if (updateErr) {
+                            console.error(`Error updating user ${row.id}:`, updateErr.message);
+                            errorCount++;
+                        } else {
+                            updatedCount++;
+                        }
+
+                        // Check if this is the last user
+                        if (index === totalUsers - 1) {
+                            const end = Date.now();
+                            console.log(`Bulk update completed. Updated: ${updatedCount}, Errors: ${errorCount}, Time: ${end - start} ms`);
+                            
+                            res.status(200).json({
+                                message: "Bulk update completed",
+                                totalUsers: totalUsers,
+                                updatedCount: updatedCount,
+                                errorCount: errorCount,
+                                attributePath: attributePath,
+                                attributeValue: attributeValue,
+                                timeTaken: `${end - start} ms`
+                            });
+                        }
+                    }
+                );
+            } catch (parseErr) {
+                console.error(`Error parsing json_body for user ${row.id}:`, parseErr.message);
+                errorCount++;
+                
+                if (index === totalUsers - 1) {
+                    const end = Date.now();
+                    res.status(200).json({
+                        message: "Bulk update completed with errors",
+                        totalUsers: totalUsers,
+                        updatedCount: updatedCount,
+                        errorCount: errorCount,
+                        timeTaken: `${end - start} ms`
+                    });
+                }
+            }
+        });
+    });
+}
