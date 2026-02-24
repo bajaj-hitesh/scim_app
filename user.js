@@ -257,27 +257,82 @@ function setNestedProperty(obj, path, value) {
     current[keys[keys.length - 1]] = value;
 }
 
-exports.bulkUpdateAttribute = async (req, res, next) => {
+// Helper function to remove nested property using dot notation
+function removeNestedProperty(obj, path) {
+    // Check if this is a SCIM schema URN path
+    const scimSchemaMatch = path.match(/^(urn:[^.]+\.\d+:[^.]+)\.(.+)$/);
+    
+    if (scimSchemaMatch) {
+        const schemaKey = scimSchemaMatch[1];
+        const nestedPath = scimSchemaMatch[2];
+        
+        if (!obj[schemaKey]) return;
+        
+        if (nestedPath.includes('.')) {
+            const nestedKeys = nestedPath.split('.');
+            let current = obj[schemaKey];
+            
+            for (let i = 0; i < nestedKeys.length - 1; i++) {
+                if (!current[nestedKeys[i]]) return;
+                current = current[nestedKeys[i]];
+            }
+            delete current[nestedKeys[nestedKeys.length - 1]];
+        } else {
+            delete obj[schemaKey][nestedPath];
+        }
+        return;
+    }
+    
+    // Handle direct property
+    if (!path.includes('.')) {
+        delete obj[path];
+        return;
+    }
+
+    // Handle regular nested property
+    const keys = path.split('.');
+    let current = obj;
+
+    for (let i = 0; i < keys.length - 1; i++) {
+        if (!current[keys[i]]) return;
+        current = current[keys[i]];
+    }
+    delete current[keys[keys.length - 1]];
+}
+
+exports.    bulkUpdateAttribute = async (req, res, next) => {
     const start = Date.now();
-    const { attributePath, attributeValue } = req.body;
+    const { Operations } = req.body;
 
-    let database = db
-     if(req.params.customdb){
-        databaseName = req.params.customdb
-        database = databases[databaseName]
-     }
+    // Support custom database
+    let database = db;
+    if (req.params.customdb) {
+        const databaseName = req.params.customdb;
+        database = databases[databaseName];
+    }
 
-    if (!attributePath) {
+    if (!Operations || !Array.isArray(Operations) || Operations.length === 0) {
         return res.status(400).json({
-            detail: "attributePath is required",
+            detail: "Operations array is required",
             status: 400
         });
     }
 
-    console.log(`Bulk update: Setting ${attributePath} = ${JSON.stringify(attributeValue)} for all users`);
+    // Get user count limit from header (optional)
+    const userCountLimit = req.headers['x-user-count'] ? parseInt(req.headers['x-user-count']) : null;
+    
+    if (userCountLimit !== null && (isNaN(userCountLimit) || userCountLimit <= 0)) {
+        return res.status(400).json({
+            detail: "x-user-count header must be a positive integer",
+            status: 400
+        });
+    }
 
-    // Fetch all users
-    database.all(`SELECT id, json_body FROM users`, [], (err, rows) => {
+    const limitClause = userCountLimit ? `LIMIT ${userCountLimit}` : '';
+    console.log(`Bulk update: Processing ${Operations.length} operation(s) for ${userCountLimit ? userCountLimit : 'all'} users`);
+
+    // Fetch users (all or limited by count)
+    database.all(`SELECT id, json_body FROM users ${limitClause}`, [], (err, rows) => {
         if (err) {
             console.error('Error fetching users:', err.message);
             return res.status(500).json({
@@ -297,14 +352,32 @@ exports.bulkUpdateAttribute = async (req, res, next) => {
         let errorCount = 0;
         const totalUsers = rows.length;
 
+        console.log(`updating users: ${totalUsers}`);
+
         // Process each user
         rows.forEach((row, index) => {
             try {
                 // Parse the json_body
                 const userObj = JSON.parse(row.json_body);
                 
-                // Update the attribute using the helper function
-                setNestedProperty(userObj, attributePath, attributeValue);
+                // Apply each operation
+                Operations.forEach((operation) => {
+                    const { op, path, value } = operation;
+                    
+                    switch (op) {
+                        case 'add':
+                        case 'replace':
+                            // Both add and replace set the value at the path
+                            setNestedProperty(userObj, path, value);
+                            break;
+                        case 'remove':
+                            // Remove the property at the path
+                            removeNestedProperty(userObj, path);
+                            break;
+                        default:
+                            console.warn(`Unsupported operation: ${op}`);
+                    }
+                });
                 
                 // Stringify back
                 const updatedJsonBody = JSON.stringify(userObj);
@@ -319,6 +392,7 @@ exports.bulkUpdateAttribute = async (req, res, next) => {
                             errorCount++;
                         } else {
                             updatedCount++;
+                            console.log(updatedCount);
                         }
 
                         // Check if this is the last user
@@ -331,8 +405,7 @@ exports.bulkUpdateAttribute = async (req, res, next) => {
                                 totalUsers: totalUsers,
                                 updatedCount: updatedCount,
                                 errorCount: errorCount,
-                                attributePath: attributePath,
-                                attributeValue: attributeValue,
+                                operationsApplied: Operations.length,
                                 timeTaken: `${end - start} ms`
                             });
                         }
