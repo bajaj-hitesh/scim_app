@@ -392,7 +392,6 @@ exports.    bulkUpdateAttribute = async (req, res, next) => {
                             errorCount++;
                         } else {
                             updatedCount++;
-                            console.log(updatedCount);
                         }
 
                         // Check if this is the last user
