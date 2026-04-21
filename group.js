@@ -81,42 +81,108 @@ exports.patchGroupMembership = async (req, res, next) => {
     const groupId = req.params.id;
     const { Operations } = req.body;
 
-    // Retrieve the group from the database
-    db.get('SELECT * FROM groups WHERE id = ?', [groupId], (err, group) => {
-        if (err) return res.status(500).json({ error: 'Internal server error' });
-        if (!group) return res.status(404).json({ error: 'Group not found' });
+    try {
+        // First, verify the group exists
+        const group = await new Promise((resolve, reject) => {
+            db.get('SELECT * FROM groups WHERE id = ?', [groupId], (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
 
-         // Parse members as JSON if it's stored as a string
-         group.members = group.members ? JSON.parse(group.members) : [];
+        if (!group) {
+            return res.status(404).json({ error: 'Group not found' });
+        }
 
-                 // Apply each operation in the request body
-        Operations.forEach((operation) => {
+        // Process each operation
+        for (const operation of Operations) {
             const { op, path, value } = operation;
+
+            if (path !== 'members') {
+                continue; // Skip non-member operations
+            }
 
             switch (op) {
                 case 'add':
-                    if (path === 'members') {
-                        group.members = [...group.members, ...value];
+                    // Add members to group_memberships table
+                    if (Array.isArray(value)) {
+                        for (const member of value) {
+                            const userId = member.value || member;
+                            try {
+                                await new Promise((resolve, reject) => {
+                                    db.run(
+                                        'INSERT OR IGNORE INTO group_memberships (groupId, userId) VALUES (?, ?)',
+                                        [groupId, userId],
+                                        function(err) {
+                                            if (err) reject(err);
+                                            else resolve(this);
+                                        }
+                                    );
+                                });
+                                console.log(`Added member ${userId} to group ${groupId}`);
+                            } catch (err) {
+                                console.error(`Error adding member ${userId}:`, err);
+                            }
+                        }
                     }
                     break;
+
                 case 'remove':
-                    if (path === 'members') {
-                        // Remove specified members
-                        group.members = group.members.filter(member => !value.includes(member.value));
+                    // Remove members from group_memberships table
+                    if (Array.isArray(value)) {
+                        for (const member of value) {
+                            const userId = member.value || member;
+                            try {
+                                await new Promise((resolve, reject) => {
+                                    db.run(
+                                        'DELETE FROM group_memberships WHERE groupId = ? AND userId = ?',
+                                        [groupId, userId],
+                                        function(err) {
+                                            if (err) reject(err);
+                                            else resolve(this);
+                                        }
+                                    );
+                                });
+                                console.log(`Removed member ${userId} from group ${groupId}`);
+                            } catch (err) {
+                                console.error(`Error removing member ${userId}:`, err);
+                            }
+                        }
                     }
                     break;
+
                 default:
-                    res.status(400).json({ error: 'Unsupported operation' });
-                    return;
+                    return res.status(400).json({ error: `Unsupported operation: ${op}` });
             }
+        }
+
+        // Retrieve updated group with members for response
+        const members = await new Promise((resolve, reject) => {
+            db.all(
+                'SELECT userId FROM group_memberships WHERE groupId = ?',
+                [groupId],
+                (err, rows) => {
+                    if (err) reject(err);
+                    else resolve(rows.map(row => ({ value: row.userId })));
+                }
+            );
         });
 
+        const updatedGroup = {
+            id: group.id,
+            displayName: group.displayName,
+            members: members
+        };
 
-        console.log(group);
-        res.status(204).json(group);
+        console.log('Updated group:', updatedGroup);
+        
+        // SCIM PATCH should return 204 No Content on success
+        res.status(204).send();
 
-    });
-
+    } catch (err) {
+        console.error('Error in patchGroupMembership:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 }
 
 
