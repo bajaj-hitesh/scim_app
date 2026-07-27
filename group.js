@@ -174,7 +174,7 @@ exports.patchGroupMembership = async (req, res, next) => {
             members: members
         };
 
-        console.log('Updated group:', updatedGroup);
+        console.log(`Updated group: ${group.id}`); 
         
         // SCIM PATCH should return 204 No Content on success
         res.status(204).send();
